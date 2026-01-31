@@ -1,0 +1,17 @@
+# Build output
+build/
+
+# Haxe cache
+dump/
+.haxelib/
+
+# IDE
+.zed/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dependencies
+node_modules/
