@@ -27,4 +27,11 @@ Haxe/Heaps hexagonal tower defense game targeting JavaScript/WebGL.
 |-----------|------|--------------|
 | `src/` | Haxe source code | Implementing game features |
 | `res/` | Runtime assets (sprites, audio, data) | Adding or modifying game assets |
+| `docs/` | Design documentation | Understanding game design, vertical slice scope |
 | `.haxelib/` | Vendored Haxe libraries | (Skip: vendored dependencies) |
+
+## Design Documents
+
+| File | What | When to Read |
+|------|------|--------------|
+| `docs/GDD.md` | Game Design Document for Supercritical | Understanding core loop, energy economy, entity specs, development phases |
