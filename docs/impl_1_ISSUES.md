@@ -549,3 +549,112 @@ When `game.firstPlay` becomes false, we stop calling `drawFirstPlayMessage()`, b
 
 2. `src/Main.hx`:
    - Added else branch to call `uiRenderer.hideFirstPlayMessage()` when `firstPlay` is false
+
+---
+
+## Issue 20: Tower Doesn't Face Target (Rotation Offset)
+
+**Status:** Fixed
+
+**Symptom:**
+After implementing tower rotation to face enemies, the tower triangle still points upward instead of toward its target.
+
+**Root Cause:**
+Coordinate system mismatch between the triangle vertex design and `atan2` angle convention:
+- Triangle vertices designed to point UP when rotation angle = 0 (tip at `(0, -10)`)
+- `atan2(dy, dx)` returns 0 when pointing RIGHT, not UP
+- The rotation needs a +90° (π/2) offset to align these conventions
+
+**Causal Chain:**
+1. `atan2(targetY - towerY, targetX - towerX)` returns angle where 0 = RIGHT
+2. Triangle vertices `v1 = (0, -10)` point UP at angle = 0
+3. When enemy is to the right, angle = 0, triangle still points up
+4. Tower visually doesn't face the enemy
+
+**Evidence:**
+| Location | Finding |
+|----------|---------|
+| `EntityRenderer.hx:45` | `tower.facingAngle = Math.atan2(...)` - no offset applied |
+| `EntityRenderer.hx:52-57` | Triangle vertices: tip at (0, -10) = points up at angle 0 |
+| `Tower.hx:9` | `facingAngle = -Math.PI / 2` - default pointing up |
+
+**Fix Applied:**
+
+1. `src/render/EntityRenderer.hx`:
+   - Changed angle calculation to add π/2 offset: `tower.facingAngle = Math.atan2(...) + Math.PI / 2`
+   - This aligns triangle's "up" (angle=0) with atan2's "right" (angle=0)
+
+2. `src/entities/Tower.hx`:
+   - Changed default `facingAngle` from `-Math.PI / 2` to `0`
+   - At angle=0, triangle now correctly points up (default when no target)
+
+---
+
+## Issue 21: Can Place Tower/Spawn on Base
+
+**Status:** Fixed
+
+**Symptom:**
+Player can place a tower or spawn point directly on top of the base at coordinate (0,0,0), which should be blocked.
+
+**Root Cause:**
+The placement validation functions (`placeTower`, `placeSpawn`, `tryPlaceObstacle`) accept the base coordinate (0,0,0) as valid because validation only checks for path blocking and entity collisions, treating the base hex identically to empty hexes. The base is also not marked as an obstacle in the grid.
+
+**Causal Chain:**
+1. Player clicks on base hex (0,0,0) to place tower/spawn
+2. Validation checks: spawn/tower collision (none), energy (sufficient), path validation (passes)
+3. Base coordinate (0,0,0) passes all validation checks
+4. Entity created at base location, overlapping the base
+
+**Evidence:**
+| Location | Finding |
+|----------|---------|
+| `Game.hx:63-70` | `placeTower()` - no check for base coordinate |
+| `Game.hx:72-80` | `placeSpawn()` - no check for base coordinate |
+| `Game.hx:82-93` | `tryPlaceObstacle()` - no check for base coordinate |
+| `Base.hx:8-10` | Base created at (0,0,0), not marked as obstacle |
+| `Main.hx:100-125` | UI validation - no check for base coordinate |
+
+**Fix Applied:**
+
+1. `src/Game.hx`:
+   - Added check in `tryPlaceObstacle()`: `if (coord.q == 0 && coord.r == 0 && coord.s == 0) return false;`
+
+2. `src/Main.hx`:
+   - Added `isBase` check in UI validation for both tower and spawn modes
+   - Placement preview now shows invalid (red X) when hovering over base
+
+---
+
+## Issue 22: Towers Have Orange Outline When Rendered After Spawns
+
+**Status:** Fixed
+
+**Symptom:**
+Newly placed towers sometimes display an orange/reddish outline around the triangle shape. Older towers don't have this outline. The outline appears to match the tower's triangle shape.
+
+**Root Cause:**
+`drawSpawn()` sets `graphics.lineStyle(2, Palette.SPAWN)` (orange: 0xff8800) to draw the spawn hexagon outline, but never clears the lineStyle at the end. Entities render in array order (order of addition). When a tower renders AFTER a spawn point in the iteration, the spawn's orange lineStyle bleeds into the tower's `moveTo/lineTo` calls, causing an orange stroke around the cyan fill.
+
+**Causal Chain:**
+1. Entities render in order of addition to `game.entities` array
+2. Spawns added early, new towers added to end of array
+3. `drawSpawn()` sets `lineStyle(2, Palette.SPAWN)` but never clears it
+4. Tower renders after spawn → `beginFill/moveTo/lineTo` inherits orange lineStyle
+5. Tower appears with orange outline around cyan fill
+
+**Why "old" towers don't have it:**
+Old towers were added to the entity array before spawns, so they render BEFORE spawns and don't inherit the lineStyle.
+
+**Evidence:**
+| Location | Finding |
+|----------|---------|
+| `EntityRenderer.hx:111` | `graphics.lineStyle(2, Palette.SPAWN)` sets orange stroke |
+| `EntityRenderer.hx:109-122` | `drawSpawn()` never calls `graphics.lineStyle()` to clear |
+| `EntityRenderer.hx:68-73` | `drawTower()` uses `moveTo/lineTo` which inherit active lineStyle |
+| `Main.hx:67-78` | Entities render in array iteration order |
+
+**Fix Applied:**
+
+`src/render/EntityRenderer.hx`:
+- Added `graphics.lineStyle()` at end of `drawSpawn()` to clear the lineStyle and prevent bleeding to subsequent entities

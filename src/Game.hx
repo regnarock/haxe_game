@@ -13,6 +13,7 @@ class Game {
     public var elapsedTime:Float = 0.0;
     public var gameOver:Bool = false;
     public var firstPlay:Bool = true;
+    public var showTowerTip:Bool = false;
     public var effectsRenderer:EffectsRenderer;
     var addQueue:Array<Entity> = [];
     var removeQueue:Array<Entity> = [];
@@ -63,18 +64,24 @@ class Game {
         for (spawn in spawns) {
             if (spawn.coord == coord && spawn.alive) return false;
         }
-        return tryPlaceObstacle(coord, Config.TOWER_COST, () -> new Tower(this, coord));
+        var placed = tryPlaceObstacle(coord, Config.TOWER_COST, () -> new Tower(this, coord));
+        if (placed) showTowerTip = false;
+        return placed;
     }
 
     public function placeSpawn(coord:HexCoord):Bool {
         for (tower in towers) {
             if (tower.coord == coord && tower.alive) return false;
         }
-        return tryPlaceObstacle(coord, Config.SPAWN_COST, () -> new SpawnPoint(this, coord));
+        var isFirst = spawns.length == 0;
+        var placed = tryPlaceObstacle(coord, Config.SPAWN_COST, () -> new SpawnPoint(this, coord));
+        if (placed && isFirst) showTowerTip = true;
+        return placed;
     }
 
     function tryPlaceObstacle(coord:HexCoord, cost:Int, entityFactory:Void->Entity):Bool {
         if (energy < cost) return false;
+        if (coord.q == 0 && coord.r == 0 && coord.s == 0) return false; // Can't place on base
         if (!Pathfinding.validatePlacement(grid, coord)) return false;
 
         energy -= cost;

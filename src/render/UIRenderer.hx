@@ -104,6 +104,18 @@ class UIRenderer {
         messageText.visible = false;
     }
 
+    public function drawTowerTip():Void {
+        messageText.text = 'Right-click to place a tower and destroy the enemies!';
+        messageText.x = 600;
+        messageText.y = 300;
+        messageText.textColor = Palette.UI_TEXT;
+        messageText.visible = true;
+    }
+
+    public function hideTowerTip():Void {
+        messageText.visible = false;
+    }
+
     public function drawPlacementPreview(coord:HexCoord, mode:PlacementMode, valid:Bool):Void {
         var pos = HexMath.cubeToPixel(coord);
         graphics.lineStyle(2, valid ? 0x00ff00 : 0xff0000);

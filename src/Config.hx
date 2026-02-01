@@ -18,7 +18,7 @@ class Config {
     public static inline var ENEMY_HP:Float = 1.0;
 
     public static inline var TOWER_RANGE:Int = 2;
-    public static inline var TOWER_KILL_TIME:Float = 1.0;
+    public static inline var TOWER_KILL_TIME:Float = 0.1;
     public static inline var TOWER_COST:Int = 20;
 
     public static inline var SPAWN_INTERVAL:Float = 3.0;

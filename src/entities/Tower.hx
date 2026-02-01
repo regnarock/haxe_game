@@ -6,6 +6,7 @@ class Tower extends Entity {
     public var range:Int;
     public var target:Enemy = null;
     public var attackProgress:Float = 0.0;
+    public var facingAngle:Float = 0;
 
     public function new(game:Game, coord:HexCoord) {
         super(game, coord);

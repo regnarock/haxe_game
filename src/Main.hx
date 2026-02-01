@@ -91,16 +91,20 @@ class Main extends hxd.App {
             uiRenderer.drawWarnings(game.energy);
             if (game.firstPlay) {
                 uiRenderer.drawFirstPlayMessage();
+            } else if (game.showTowerTip) {
+                uiRenderer.drawTowerTip();
             } else {
-                uiRenderer.hideFirstPlayMessage();
+                uiRenderer.hideTowerTip();
             }
 
             if (placementController.mode != NONE && placementController.hoveredCoord != null) {
                 var isValid = false;
                 var cost = 0;
+                var hc = placementController.hoveredCoord;
+                var isBase = hc.q == 0 && hc.r == 0 && hc.s == 0;
                 if (placementController.mode == TOWER) {
                     cost = Config.TOWER_COST;
-                    isValid = game.energy >= cost && Pathfinding.validatePlacement(grid, placementController.hoveredCoord);
+                    isValid = game.energy >= cost && !isBase && Pathfinding.validatePlacement(grid, placementController.hoveredCoord);
                     for (spawn in game.spawns) {
                         if (spawn.coord == placementController.hoveredCoord && spawn.alive) {
                             isValid = false;
@@ -109,7 +113,7 @@ class Main extends hxd.App {
                     }
                 } else if (placementController.mode == SPAWN) {
                     cost = Config.SPAWN_COST;
-                    isValid = game.energy >= cost && Pathfinding.validatePlacement(grid, placementController.hoveredCoord);
+                    isValid = game.energy >= cost && !isBase && Pathfinding.validatePlacement(grid, placementController.hoveredCoord);
                     for (tower in game.towers) {
                         if (tower.coord == placementController.hoveredCoord && tower.alive) {
                             isValid = false;

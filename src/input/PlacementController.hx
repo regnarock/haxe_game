@@ -27,11 +27,11 @@ class PlacementController {
     }
 
     public function onLeftClick():Void {
-        handlePlacementClick(TOWER, SPAWN);
+        handlePlacementClick(SPAWN, TOWER);
     }
 
     public function onRightClick():Void {
-        handlePlacementClick(SPAWN, TOWER);
+        handlePlacementClick(TOWER, SPAWN);
     }
 
     function handlePlacementClick(attemptMode:PlacementMode, toggleMode:PlacementMode):Void {
