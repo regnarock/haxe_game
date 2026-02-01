@@ -1,6 +1,10 @@
-# Hex Tower Defense
+# Supercritical
 
-Real-time 2D hexagonal grid tower defense game built with Haxe and Heaps (JavaScript/WebGL target).
+Arcade tower defense game where "danger is fuel." Built with Haxe and Heaps (JavaScript/WebGL target).
+
+## Core Mechanic
+
+Enemies generate energy while alive. Entropy constantly drains energy. Players balance spawn points (danger source) against towers (enemy elimination) to stay in the supercritical zone. Game ends when energy reaches zero.
 
 ## Architecture
 
@@ -13,49 +17,56 @@ Real-time 2D hexagonal grid tower defense game built with Haxe and Heaps (JavaSc
 
 ### Hex Grid System
 
-Uses axial coordinates (q, r) for all game logic. Pixel positions are derived only for rendering.
+Uses cube coordinates (q, r, s where q+r+s=0) for all game logic. Pixel positions are derived only for rendering.
 
 | Concept | Implementation |
 |---------|----------------|
-| Coordinate type | `HexCoord` (axial q, r) |
-| Grid storage | `HexGrid` maps coordinates to cells |
+| Coordinate type | `HexCoord` (cube q, r, s) |
+| Grid storage | `HexGrid` tracks obstacles |
 | Math utilities | `HexMath` for distance, neighbors, conversions |
+| Pathfinding | A* with hex distance heuristic |
 
 ### Entity System
 
-All game objects (Tower, Enemy, Nest, Projectile) extend a base `Entity` class and register with `Game` for lifecycle management.
+All game objects (Tower, Enemy, SpawnPoint, Base) extend `Entity` and register with `Game` for lifecycle management.
 
-Entity lists use add/remove queues to prevent modification during iteration.
-
-### Data-Driven Design
-
-Tower stats, enemy stats, and nest definitions live in JSON files under `res/data/`. Haxe code loads and parses these at runtime. This allows tuning without recompilation.
+Entity lists use add/remove queues to prevent modification during iteration. Entities have an `alive` flag; dead entities are skipped during processing but remain in arrays until queue flush.
 
 ## Key Invariants
 
 1. **Coordinates**: All game logic uses `HexCoord`. Pixel positions exist only at render time.
-2. **Asset access**: Use `Res.sprites.tower` (compile-time checked), never string paths.
+2. **Grid invariant**: Every non-obstacle hex must have a valid path to base (0,0,0). Prevents softlock placements.
 3. **Entity lifecycle**: Never modify entity lists during iteration; queue changes.
-4. **Separation**: Game logic in `update(dt)`, never in render callbacks.
-5. **Data files**: Tower/enemy/nest stats in JSON, not hardcoded.
+4. **Energy bounds**: energy >= 0 triggers game over; energy capped at ENERGY_MAX.
+5. **Pathfinding cache**: Enemy paths invalidated on any obstacle change.
 
 ## Game Mechanics
 
 ### Towers
-- Placed on hex cells by the player
-- Have range measured in hex distance
-- Fire projectiles at enemies within range
+- Placed on hex cells by the player (costs 20 energy)
+- Have range measured in hex distance (2 hexes)
+- Target first enemy in range (FIFO)
+- Kill enemies instantly after 1 second lock-on
+- Block pathfinding (enemies route around)
 
 ### Enemies
-- Spawned from nests
-- Follow A* pathfinding to goal
-- Have HP and movement speed
+- Spawned from SpawnPoints
+- Follow A* pathfinding to base at (0,0,0)
+- Generate 0.5 energy/sec while alive
+- Deduct 10 energy if they reach base
 
-### Nests
-- Player-placed spawners
-- Spawn enemies at a configured rate
-- Expire after duration/spawn count reached
-- Properties: spawn rate, enemy type, lifetime, spawn count
+### SpawnPoints
+- Player-placed spawners (cost 15 energy)
+- Spawn enemies every 3 seconds
+- Permanent until natural expiration (cannot be destroyed)
+- Expire after 5 enemies spawned OR 30 seconds elapsed
+- Block pathfinding (enemies route around)
+
+### Energy Economy
+- Start with 50 energy
+- Entropy drains 1.0/sec initially, grows 0.1 per 10 seconds
+- Energy formula: delta = (alive enemies * 0.5) - entropy
+- Hard cap at 100 energy (forces active play vs hoarding)
 
 ## Debugging
 

@@ -43,6 +43,7 @@
 | `ENTROPY_GROWTH` | Entropy increase per 10 seconds | 0.1 |
 | `ENEMY_ENERGY_VALUE` | Energy per enemy alive (per second) | 0.5 |
 | `BASE_HIT_PENALTY` | Energy lost when enemy reaches core | 10 |
+| `SPAWN_COUNT_LIMIT` | Enemies spawned before spawn point expires | 20 |
 
 **Energy Formula (per frame):**
 ```
@@ -64,9 +65,10 @@ if current_energy <= 0: GAME OVER
 - Placed by player on any empty hex **that has a valid path to base**
 - Cost: `SPAWN_COST = 15` energy
 - Spawns one enemy every `SPAWN_INTERVAL = 3` seconds
-- **Destroyable:** Can be destroyed by placing a tower on it. Returns `SPAWN_RECLAIM = 5` energy.
+- **Expiration:** Despawns after producing `SPAWN_COUNT_LIMIT = 20` enemies
+- **Permanent:** Cannot be removed by player or tower; must wait for natural expiration
 - **Path Blocking:** Spawn points count as obstacles for pathfinding validation (cannot place if it would block the only path)
-- Visual: Neon orange ring, pulses when spawning
+- Visual: Neon orange ring, pulses when spawning. Counter shows remaining spawns ("3/5"). Fades on expiration.
 - Shape: **Hexagon outline** (matches grid)
 
 #### Enemy
@@ -78,7 +80,7 @@ if current_energy <= 0: GAME OVER
 - Shape: **Circle** (distinct from hexagons)
 
 #### Tower
-- Placed by player on any empty hex (or on spawn point to destroy it)
+- Placed by player on any empty hex (cannot place on spawn points)
 - Cost: `TOWER_COST = 20` energy (one-time, no upkeep)
 - Attacks enemies within `TOWER_RANGE = 2` hexes
 - **Targeting:** FIFO (first enemy to enter range). Deferred: per-tower-type targeting, configurable behavior.
@@ -144,10 +146,11 @@ This inversion supports the "danger is fuel" theme. Consider early-game tooltip:
 - Critical for player to understand their situation
 
 ### 5.3 Input Controls
-- **Right-click:** Toggle tower placement mode. Right-click on hex to place tower. Left-click to cancel.
-- **Left-click:** Toggle spawn point placement mode. Left-click on hex to place spawn. Right-click to cancel.
+- **Left-click:** Toggle tower placement mode. Left-click on hex to place tower. Right-click to cancel.
+- **Right-click:** Toggle spawn point placement mode. Right-click on hex to place spawn. Left-click to cancel.
 - **Placement preview:** Show ghost of entity on hovered hex. Red X if invalid placement.
 - **Cost display:** Show cost near cursor during placement mode. Grey out if insufficient energy.
+- **R key:** Restart game (only available on game over screen).
 
 ### 5.4 Warning System
 - **At 0 enemies for 3+ seconds:** Display "NO FUEL!" warning above energy bar (highest priority)
@@ -203,7 +206,7 @@ This message is **mandatory** for the vertical slice. The inverted mechanic requ
 | Hex grid | 15x15 hex grid, cube coordinates, pointy-top, base at origin |
 | Base | Center hex (0,0,0), pulsing glow |
 | Energy | Working economy with all parameters (no tower upkeep) |
-| Spawn Point | One type, player placeable, requires valid path, counts as obstacle |
+| Spawn Point | One type, player placeable, expires after 5 enemies, counts as obstacle |
 | Enemy | One type, pathfinds to base, contributes energy while alive |
 | Tower | One type, FIFO targeting, kills enemies in range |
 | Pathfinding | A* on hex grid with tower AND spawn obstacles, grid invariant enforced |
@@ -358,12 +361,12 @@ src/
 
 ### Phase E: Spawn Points + Placement (Day 7)
 **Build:**
-- `SpawnPoint` entity with spawn timer
+- `SpawnPoint` entity with spawn timer and expiration (count-based)
 - Placement mode (click to place spawn/tower)
-- Spawn point destruction (tower placed on spawn)
+- Spawn point visual counter ("3/5") and fade on expiration
 - Cost deduction from energy
 
-**Validate:** Place spawn → enemies appear → place tower → kills enemies → energy fluctuates
+**Validate:** Place spawn → enemies appear → spawn expires after 5 enemies → place tower → energy fluctuates
 
 **Files:** `entities/SpawnPoint.hx`, update `Game.hx`
 
@@ -408,6 +411,7 @@ After vertical slice is playable, tune these parameters to find fun:
 | `BASE_HIT_PENALTY` | Enemy hits don't matter | One hit = death spiral |
 | `TOWER_KILL_TIME` | Towers too strong | Towers useless |
 | `SPAWN_INTERVAL` | Slow escalation | Overwhelming immediately |
+| `SPAWN_COUNT_LIMIT` | Spawns expire too fast, constant replanting | Spawns last too long, set-and-forget |
 
 ---
 

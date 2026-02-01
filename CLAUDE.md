@@ -15,10 +15,9 @@ Haxe/Heaps hexagonal tower defense game targeting JavaScript/WebGL.
 
 | File | What | When to Read |
 |------|------|--------------|
-| `README.md` | Architecture, invariants, game mechanics | Understanding hex grid system, entity lifecycle, data-driven design |
+| `README.md` | Architecture, core mechanic, energy economy, game mechanics | Understanding Supercritical's "danger is fuel" system, hex grid, entity lifecycle |
 | `Makefile` | Build targets, watch mode, setup | Modifying build process, adding new targets |
 | `build.hxml` | Haxe compiler config, output path, libs | Adding libraries, changing compile flags |
-| `PLAN.md` | Implementation roadmap and milestones | Understanding project status, planned features |
 | `.gitignore` | Ignored paths for git | Adding new build artifacts or temp files |
 
 ## Directories
@@ -35,3 +34,4 @@ Haxe/Heaps hexagonal tower defense game targeting JavaScript/WebGL.
 | File | What | When to Read |
 |------|------|--------------|
 | `docs/GDD.md` | Game Design Document for Supercritical | Understanding core loop, energy economy, entity specs, development phases |
+| `docs/PLAN.md` | Vertical slice implementation plan | Understanding milestones, code diffs, architectural decisions |

@@ -1,10 +1,12 @@
-.PHONY: run watch setup clean
+.PHONY: run build watch setup clean
 
 run: build
 	open build/index.html
 
-build:
+build: clean
+	@mkdir -p build
 	haxe build.hxml
+	cp index.html build/
 
 watch:
 	@echo "Watching for changes... (Ctrl+C to stop)"
@@ -15,4 +17,4 @@ setup:
 	@echo "Optional: brew install fswatch (for make watch)"
 
 clean:
-	rm -rf build/
+	rm -f build/game.js
