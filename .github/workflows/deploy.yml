@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deploy to itch.io
 
 on:
   push:
@@ -8,8 +8,6 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -28,9 +26,10 @@ jobs:
           haxe build.hxml
           cp index.html build/
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./build
-          force_orphan: true
+      - name: Setup butler
+        uses: remarkablegames/setup-butler@v2
+
+      - name: Deploy to itch.io
+        run: butler push build widgethiro/supercritical:html5
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
